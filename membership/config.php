@@ -40,7 +40,7 @@ use BaconQrCode\Writer;
 $smtp_host     = 'smtp-relay.brevo.com';
 $smtp_port     = 587;
 $smtp_username = 'a0d2f9001@smtp-brevo.com';
-$smtp_password = 'xsmtpsib-6540a70a4001d954a570023fe9f99bd1e4fdd55a217bf9506f2946524bab79b4-cC5akmfkNvRXgta4';
+$smtp_password = 'xsmtpsib-6540a70a4001d954a570023fe9f99bd1e4fdd55a217bf9506f2946524bab79b4-TpaluTIZcTJs9hen';
 $admin_email   = 'ikosafo@gmail.com'; 
 
 // Admin credentials (change password; in production, hash it)

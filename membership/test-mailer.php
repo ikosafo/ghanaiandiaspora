@@ -32,6 +32,7 @@ try {
     $mail->isSMTP();
     $mail->Host       = $smtp_host;
     $mail->SMTPAuth   = true;
+     $mail->AuthType = 'PLAIN';
     $mail->Username   = $smtp_username;
     $mail->Password   = $smtp_password;
     $mail->SMTPSecure = 'tls';

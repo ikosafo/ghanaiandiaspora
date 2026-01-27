@@ -1,119 +1,98 @@
 <?php
+session_start();
 require '../config.php';
 
-// Security: only logged-in admin
+// Very important: load Composer's autoloader (same as in public index.php)
+require_once '../vendor/autoload.php';   // ← this line is probably missing!
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
 if (!isset($_SESSION['admin_logged_in'])) {
     header("Location: login.php");
     exit;
 }
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
-$id = (int)($_POST['id'] ?? $_GET['id'] ?? 0);
+$id     = $_POST['id']    ?? $_GET['id']    ?? 0;
+$reason = trim($_POST['reason'] ?? '');
 
-if ($id <= 0 || !in_array($action, ['approve', 'reject'])) {
+if (!$id || !is_numeric($id)) {
     die("Invalid request");
 }
 
-// Fetch the registration record
+// Get the current registration
 $stmt = $pdo->prepare("SELECT * FROM registrations WHERE id = ?");
 $stmt->execute([$id]);
 $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$row) {
-    die("Record not found");
+    die("Registration not found");
 }
 
-$applicant_email = $row['email'];
-$applicant_name  = $row['full_name'];
-
-// Prepare PHPMailer
-$mail = new PHPMailer(true);
-$mail->isSMTP();
-$mail->Host       = $smtp_host;
-$mail->SMTPAuth   = true;
-$mail->Username   = $smtp_username;
-$mail->Password   = $smtp_password;
-$mail->SMTPSecure = 'tls';
-$mail->Port       = $smtp_port;
-$mail->setFrom($admin_email, 'GDU Membership Admin');
-$mail->addAddress($applicant_email, $applicant_name);
-$mail->isHTML(true);
+$newStatus = '';
+$emailBody = '';
 
 if ($action === 'approve') {
-    // Generate membership ID: GDU + YEAR + 4-digit sequential + country code
-    $year = date('Y');
-    $country = $row['nationality'];
-    $code = $country_codes[$country] ?? 'XX';
-
-    // Get next number for this year
-    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM registrations WHERE membership_id LIKE ?");
-    $countStmt->execute(["GDU$year%"]);
-    $count = $countStmt->fetchColumn() + 1;
-    $seq = str_pad($count, 4, '0', STR_PAD_LEFT);
-
-    $mem_id = "GDU{$year}{$seq}{$code}";
-
-    // Generate QR code using bacon-qr-code + GD
-    $renderer = new GDLibRenderer(300); // 300x300 pixels
-    $writer = new Writer($renderer);
-
-    $qr_path = __DIR__ . '/../qrcards/' . $mem_id . '.png';
-
-    // Write QR code to file
-    $writer->writeFile($mem_id, $qr_path);
-
-    // Update database
-    $updateStmt = $pdo->prepare("
-        UPDATE registrations 
-        SET status = 'approved', 
-            membership_id = ?, 
-            membership_qr_path = ? 
-        WHERE id = ?
-    ");
-    $updateStmt->execute([$mem_id, "qrcards/{$mem_id}.png", $id]);
-
-    // Send approval email with embedded QR
-    $mail->Subject = 'GDU Membership Approved';
-    $mail->Body = "
-        <h2>Congratulations, {$applicant_name}!</h2>
-        <p>Your membership application has been <strong>approved</strong>.</p>
-        <p><strong>Membership ID:</strong> <b>{$mem_id}</b></p>
-        <p><img src='cid:qr_code' alt='Membership QR Code' style='max-width:250px;'></p>
-        <p>Keep this QR code safe for verification purposes.</p>
-        <p>Thank you for joining GDU!</p>
+    $newStatus = 'approved';
+    $emailBody = "
+        <h2>Your registration has been APPROVED!</h2>
+        <p>Dear {$row['full_name']},</p>
+        <p>Your membership application has been reviewed and approved.</p>
+        <p>Welcome to the Ghana Diaspora Union!</p>
+        <p>Thank you,<br>Ghana Diaspora Team</p>
     ";
-    $mail->addEmbeddedImage($qr_path, 'qr_code', 'membership-qr.png');
-
 } elseif ($action === 'reject') {
-    $reason = trim($_POST['reason'] ?? 'Not specified');
-
-    // Update database
-    $updateStmt = $pdo->prepare("
-        UPDATE registrations 
-        SET status = 'rejected', 
-            rejection_reason = ? 
-        WHERE id = ?
-    ");
-    $updateStmt->execute([$reason, $id]);
-
-    // Send rejection email
-    $mail->Subject = 'GDU Membership Application Rejected';
-    $mail->Body = "
-        <h2>Dear {$applicant_name},</h2>
-        <p>Your membership application has been <strong>rejected</strong>.</p>
-        <p><strong>Reason:</strong> " . nl2br(htmlspecialchars($reason)) . "</p>
-        <p>If you believe this is a mistake or have questions, please reply to this email.</p>
-        <p>Best regards,<br>GDU Team</p>
+    if (empty($reason)) {
+        die("Rejection reason is required");
+    }
+    $newStatus = 'rejected';
+    $emailBody = "
+        <h2>Your registration has been REJECTED</h2>
+        <p>Dear {$row['full_name']},</p>
+        <p>Unfortunately, your application was not approved.</p>
+        <p><strong>Reason:</strong> " . htmlspecialchars($reason) . "</p>
+        <p>If you have questions, feel free to contact us.</p>
+        <p>Thank you,<br>Ghana Diaspora Team</p>
     ";
+} else {
+    die("Invalid action");
 }
 
+// Update status in database
+$stmt = $pdo->prepare("UPDATE registrations SET status = ? WHERE id = ?");
+$stmt->execute([$newStatus, $id]);
+
+// Send email to the applicant
 try {
-    $mail->send();
-    $status_message = ($action === 'approve') ? "Approved and email sent" : "Rejected and email sent";
-} catch (Exception $e) {
-    $status_message = "Action completed but email failed: " . $mail->ErrorInfo;
-}
+    $mail = new PHPMailer(true);
 
-// Redirect back to dashboard with message
-header("Location: dashboard.php?msg=" . urlencode($status_message));
-exit;
+    $mail->isSMTP();
+    $mail->Host       = $smtp_host;
+    $mail->SMTPAuth   = true;
+    $mail->AuthType   = 'PLAIN';
+    $mail->Username   = $smtp_username;
+    $mail->Password   = $smtp_password;
+    $mail->SMTPSecure = 'tls';
+    $mail->Port       = $smtp_port;
+
+    // From admin
+    $mail->setFrom($admin_email, 'Ghana Diaspora Membership');
+    $mail->addAddress($row['email'], $row['full_name']);
+
+    $mail->isHTML(true);
+    $mail->Subject = "Your Ghana Diaspora Membership Application - " . ucfirst($newStatus);
+    $mail->Body    = $emailBody;
+
+    $mail->send();
+
+    // Redirect back with success
+    header("Location: index.php?msg=" . urlencode(ucfirst($newStatus) . " successfully! Email sent."));
+    exit;
+
+} catch (Exception $e) {
+    // Log error but still redirect
+    error_log("Email failed in process.php: " . $mail->ErrorInfo);
+    header("Location: index.php?msg=" . urlencode(ucfirst($newStatus) . " done, but email failed."));
+    exit;
+}
