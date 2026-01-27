@@ -1,0 +1,23 @@
+/* TEMPO STYLE FOR MOCHUP */
+
+.dup-note-column,
+.dup-flags-column,
+.dup-check-column,
+.dup-name-column {
+    display: none;
+}
+
+.dup-size-column {
+    width: inherit;
+}
+
+.dup-package-row-details-wrapper {
+    max-height: 122px;
+    overflow: hidden;
+}
+
+.dup-details {
+    position: relative;
+    top: -130px;
+    right: 6px;
+}

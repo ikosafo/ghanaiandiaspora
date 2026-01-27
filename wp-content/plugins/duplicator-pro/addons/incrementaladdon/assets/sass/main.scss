@@ -1,0 +1,10 @@
+/*!
+DUPLICATOR DUP CLOUD ADDON STYLE
+*/
+
+@import "../../../../node_modules/foundation-sites/scss/foundation";
+@import '../../../../assets/sass/settings';
+
+.duplicator-pro_page_duplicator-pro-incremental-backups .dup-styles {
+    @import "incremental_page";
+}

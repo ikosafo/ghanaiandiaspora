@@ -1,0 +1,33 @@
+/*!**********************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[1].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[1].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[1].use[3]!./addons/incrementaladdon/assets/sass/main.scss ***!
+  \**********************************************************************************************************************************************************************************************************************************************************************/
+/*!
+DUPLICATOR DUP CLOUD ADDON STYLE
+*/
+/**
+ * Foundation for Sites
+ * Version 6.9.0
+ * https://get.foundation
+ * Licensed under MIT Open Source
+ */
+.duplicator-pro_page_duplicator-pro-incremental-backups .dup-styles {
+  /* TEMPO STYLE FOR MOCHUP */
+}
+.duplicator-pro_page_duplicator-pro-incremental-backups .dup-styles .dup-note-column,
+.duplicator-pro_page_duplicator-pro-incremental-backups .dup-styles .dup-flags-column,
+.duplicator-pro_page_duplicator-pro-incremental-backups .dup-styles .dup-check-column,
+.duplicator-pro_page_duplicator-pro-incremental-backups .dup-styles .dup-name-column {
+  display: none;
+}
+.duplicator-pro_page_duplicator-pro-incremental-backups .dup-styles .dup-size-column {
+  width: inherit;
+}
+.duplicator-pro_page_duplicator-pro-incremental-backups .dup-styles .dup-package-row-details-wrapper {
+  max-height: 122px;
+  overflow: hidden;
+}
+.duplicator-pro_page_duplicator-pro-incremental-backups .dup-styles .dup-details {
+  position: relative;
+  top: -130px;
+  right: 6px;
+}
