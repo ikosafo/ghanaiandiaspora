@@ -4,3 +4,4 @@ Backup.zip
 membership/config.php
 wp-config.php
 wp-content/backups-*
+wp-content/wflogs/config-synced.php
