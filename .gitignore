@@ -2,3 +2,5 @@ backup 2/
 backup-*.zip
 Backup.zip
 membership/config.php
+wp-config.php
+wp-content/backups-*
