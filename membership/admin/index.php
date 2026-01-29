@@ -27,7 +27,7 @@ $paginated = array_slice($registrations, $offset, $perPage);
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Admin Dashboard | Ghana Diaspora</title>
+    <title>Admin Dashboard | Ghanaian Diaspora</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -156,10 +156,10 @@ $paginated = array_slice($registrations, $offset, $perPage);
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 8px 14px;
+            padding: 5px 10px;
             border: none;
             border-radius: 8px;
-            font-size: 0.875rem;
+            font-size: 0.775rem;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
@@ -280,7 +280,7 @@ $paginated = array_slice($registrations, $offset, $perPage);
 
 <div class="container">
     <div class="header">
-        <img src="./assets/images/logo.png" alt="Ghana Diaspora Logo" style="height: 50px; margin-bottom: 16px;">
+        <img src="./assets/images/logo.png" alt="Ghanaian Diaspora Logo" style="height: 50px; margin-bottom: 16px;">
         <h1>Registrations Dashboard</h1>
         <a href="logout.php" class="btn-logout">Logout</a>
     </div>
@@ -295,6 +295,7 @@ $paginated = array_slice($registrations, $offset, $perPage);
                 <tr>
                     <th>Name</th>
                     <th>Email</th>
+                    <th>Membership ID</th>
                     <th>Nationality</th>
                     <th>Submitted</th>
                     <th>Status</th>
@@ -303,12 +304,13 @@ $paginated = array_slice($registrations, $offset, $perPage);
             </thead>
             <tbody>
                 <?php if (empty($paginated)): ?>
-                    <tr><td colspan="6" style="text-align:center; padding:40px; color:var(--text-muted);">No registrations found.</td></tr>
+                    <tr><td colspan="7" style="text-align:center; padding:40px; color:var(--text-muted);">No registrations found.</td></tr>
                 <?php else: ?>
                     <?php foreach ($paginated as $row): ?>
-                    <tr data-search="<?php echo strtolower($row['full_name'].' '.$row['email'].' '.$row['nationality']); ?>" 
+                    <tr data-search="<?php echo strtolower($row['full_name'].' '.$row['email'].' '.$row['membership_id'].' '.$row['nationality']); ?>" 
                         data-fullname="<?php echo htmlspecialchars($row['full_name']); ?>"
                         data-email="<?php echo htmlspecialchars($row['email']); ?>"
+                        data-membership_id="<?php echo htmlspecialchars($row['membership_id'] ?? '—'); ?>"
                         data-gender="<?php echo htmlspecialchars($row['gender'] ?? '—'); ?>"
                         data-dob="<?php echo htmlspecialchars($row['date_of_birth'] ?? '—'); ?>"
                         data-whatsapp="<?php echo htmlspecialchars($row['whatsapp_number'] ?? '—'); ?>"
@@ -322,6 +324,7 @@ $paginated = array_slice($registrations, $offset, $perPage);
                         data-status="<?php echo strtolower($row['status'] ?? 'pending'); ?>">
                         <td><?php echo htmlspecialchars($row['full_name']); ?></td>
                         <td><?php echo htmlspecialchars($row['email']); ?></td>
+                        <td><?php echo htmlspecialchars($row['membership_id'] ?? ''); ?></td>
                         <td><?php echo htmlspecialchars($row['nationality']); ?></td>
                         <td><?php echo date('d M Y H:i', strtotime($row['submitted_at'])); ?></td>
                         <td>
@@ -434,6 +437,7 @@ $paginated = array_slice($registrations, $offset, $perPage);
         const fields = [
             { label: 'Full Name',          value: row.dataset.fullname },
             { label: 'Email',              value: row.dataset.email },
+            { label: 'Membership ID',      value: row.dataset.membership_id },
             { label: 'Gender',             value: row.dataset.gender },
             { label: 'Date of Birth',      value: row.dataset.dob },
             { label: 'WhatsApp Number',    value: row.dataset.whatsapp },

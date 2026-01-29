@@ -1,6 +1,8 @@
 {
     "require": {
         "phpmailer/phpmailer": "^7.0",
-        "endroid/qr-code": "^6.0"
+        "endroid/qr-code": "^6.0",
+        "tecnickcom/tcpdf": "^6.10",
+        "bacon/bacon-qr-code": "^3.0"
     }
 }

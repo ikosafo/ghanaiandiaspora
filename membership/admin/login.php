@@ -26,7 +26,7 @@ if (isset($_POST['login'])) {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Admin Login | Ghana Diaspora</title>
+    <title>Admin Login | Ghanaian Diaspora</title>
     
     <!-- Google Fonts - Modern & Professional -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -181,7 +181,7 @@ if (isset($_POST['login'])) {
 
     <div class="login-container">
         <div class="header">
-            <img src="./assets/images/logo.png" alt="Ghana Diaspora Logo" style="height: 50px; margin-bottom: 16px;">
+            <img src="./assets/images/logo.png" alt="Ghanaian Diaspora Logo" style="height: 50px; margin-bottom: 16px;">
             <h1>Admin Portal</h1>
             <p>Secure access for administrators</p>
         </div>

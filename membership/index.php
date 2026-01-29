@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $current_address_ghana  = trim($_POST['current_address_ghana'] ?? '');
     $emergency_contact      = trim($_POST['emergency_contact'] ?? '');
     $emergency_phone        = trim($_POST['emergency_phone'] ?? '');
+    $admin_email_new = 'membership@ghanaiandiaspora.org';
 
     if (!empty($full_name) && filter_var($email, FILTER_VALIDATE_EMAIL) &&
         in_array($gender, ['Male', 'Female']) &&
@@ -64,9 +65,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // IMPORTANT: Use your admin email as From (verified in Brevo)
             // User's email goes to Reply-To
-            $mail->setFrom($admin_email, 'Ghana Diaspora Membership');
+            $mail->setFrom($admin_email, 'Ghanaian Diaspora Membership');
             $mail->addReplyTo($email, $full_name);
-            $mail->addAddress($admin_email);
+            $mail->addAddress($admin_email_new);
 
             $mail->isHTML(true);
             $mail->Subject = 'New Membership Registration - ' . $full_name;

@@ -39,8 +39,8 @@ try {
     $mail->Port       = $smtp_port;
 
     // Use a verified sender email (avoids some rejections)
-    $test_recipient = 'ikosafo@gmail.com';  // ← CHANGE THIS
-    $mail->setFrom($admin_email, 'Test Mailer - Ghana Diaspora');
+    $test_recipient = 'd';  
+    $mail->setFrom($admin_email, 'Test Mailer - Ghanaian Diaspora');
     $mail->addAddress($test_recipient);
 
     $mail->isHTML(true);

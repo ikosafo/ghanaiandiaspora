@@ -36,16 +36,17 @@ require __DIR__ . '/BaconQrCode/src/Renderer/GDLibRenderer.php';
 use BaconQrCode\Renderer\GDLibRenderer;
 use BaconQrCode\Writer;
  */
-// Brevo SMTP
+// Brevo SMTPs
 $smtp_host     = 'smtp-relay.brevo.com';
 $smtp_port     = 587;
 $smtp_username = 'a0d2f9001@smtp-brevo.com';
-$smtp_password = 'xxxxxxxxxxxxxxxxxxxxxxxxx';
+$smtp_password = '';
 $admin_email   = 'ikosafo@gmail.com'; 
+//$admin_email = 'ghanaiandiasporaa@gmail.com';
 
 // Admin credentials (change password; in production, hash it)
 $admin_username = 'admin';
-$admin_password = 'super_secure_password_123'; // CHANGE THIS!
+$admin_password = 'super_secure_password_123'; 
 
 // Country codes (add more if needed)
 $country_codes = [
