@@ -2,6 +2,26 @@ backup 2/
 backup-*.zip
 Backup.zip
 membership/config.php
-wp-config.php
+
 wp-content/backups-*
 wp-content/wflogs/config-synced.php
+# WordPress Core
+wp-config.php
+wp-content/uploads/
+wp-content/upgrade/
+wp-content/backup-db/
+
+# Wordfence (Crucial to prevent your specific error)
+wp-content/wflogs/
+wp-content/plugins/wordfence/
+
+# PHP/System
+.htaccess
+error_log
+php_error.log
+.DS_Store
+.user.ini
+
+# Application Specific
+membership/vendor/
+*.pdf
