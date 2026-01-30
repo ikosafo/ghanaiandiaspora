@@ -2,20 +2,51 @@
 //session_start();
 require '../config.php';
 
+// Display flash message if exists
+if (isset($_SESSION['flash'])) {
+    $flash = $_SESSION['flash'];
+    unset($_SESSION['flash']);
+
+    $class = $flash['type'] === 'success' ? 'alert-success' :
+             ($flash['type'] === 'warning' ? 'alert-warning' : 'alert-danger');
+
+    echo '<div class="alert ' . $class . ' alert-dismissible fade show" role="alert" style="margin: 1rem;">';
+    echo htmlspecialchars($flash['text']);
+    echo '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+    echo '</div>';
+}
+
 if (!isset($_SESSION['admin_logged_in'])) {
     header("Location: login.php");
     exit;
 }
 
-$stmt = $pdo->query("
-    SELECT * FROM registrations 
-    ORDER BY submitted_at DESC
-");
+// Fetch all registrations
+$stmt = $pdo->query("SELECT * FROM registrations ORDER BY submitted_at DESC");
 $registrations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Statistics
+$totalRegistrations = count($registrations);
+$pendingCount = 0;
+$approvedCount = 0;
+$rejectedCount = 0;
+foreach ($registrations as $reg) {
+    $status = strtolower($reg['status'] ?? 'pending');
+    if ($status === 'pending') $pendingCount++;
+    elseif ($status === 'approved') $approvedCount++;
+    elseif ($status === 'rejected') $rejectedCount++;
+}
+
+// For chart data
+$chartData = [
+    'labels' => ['Pending', 'Approved', 'Rejected'],
+    'data' => [$pendingCount, $approvedCount, $rejectedCount],
+    'colors' => ['#fef3c7', '#d1fae5', '#fee2e2']
+];
 
 // Pagination
 $perPage = 10;
-$total = count($registrations);
+$total = $totalRegistrations;
 $pages = ceil($total / $perPage);
 $currentPage = max(1, isset($_GET['page']) ? (int)$_GET['page'] : 1);
 $offset = ($currentPage - 1) * $perPage;
@@ -35,6 +66,9 @@ $paginated = array_slice($registrations, $offset, $perPage);
     
     <!-- Feather Icons -->
     <script src="https://unpkg.com/feather-icons"></script>
+
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         :root {
@@ -85,6 +119,46 @@ $paginated = array_slice($registrations, $offset, $perPage);
 
         .btn-logout:hover { background: #dc2626; }
 
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .chart-container {
+            background: var(--card);
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .chart-container h2 {
+            font-size: 1.25rem;
+            margin-bottom: 16px;
+        }
+
         .controls {
             display: flex;
             justify-content: space-between;
@@ -108,6 +182,19 @@ $paginated = array_slice($registrations, $offset, $perPage);
             border-color: var(--primary);
             box-shadow: 0 0 0 4px rgba(37,99,235,0.15);
         }
+
+        .btn-export {
+            padding: 10px 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .btn-export:hover { background: var(--primary-dark); }
 
         .table-container {
             background: var(--card);
@@ -274,9 +361,66 @@ $paginated = array_slice($registrations, $offset, $perPage);
             border-color: var(--danger);
             box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
         }
+
+        #processing-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .processing-content {
+            background: white;
+            padding: 2.5rem 3rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            min-width: 320px;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .processing-content h3 {
+            margin: 0 0 0.8rem;
+            color: #2c3e50;
+            font-size: 1.4rem;
+        }
+
+        .processing-content p {
+            margin: 0;
+            color: #7f8c8d;
+            font-size: 1rem;
+        }
     </style>
 </head>
 <body>
+
+<div id="processing-overlay">
+    <div class="processing-content">
+        <div class="spinner"></div>
+        <h3 id="processing-title">Processing...</h3>
+        <p id="processing-message">Please wait while we handle the request.</p>
+    </div>
+</div>
 
 <div class="container">
     <div class="header">
@@ -285,8 +429,35 @@ $paginated = array_slice($registrations, $offset, $perPage);
         <a href="logout.php" class="btn-logout">Logout</a>
     </div>
 
+    <!-- Statistics Section -->
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-number"><?php echo $totalRegistrations; ?></div>
+            <div class="stat-label">Total Registrations</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number"><?php echo $pendingCount; ?></div>
+            <div class="stat-label">Pending</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number"><?php echo $approvedCount; ?></div>
+            <div class="stat-label">Approved</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number"><?php echo $rejectedCount; ?></div>
+            <div class="stat-label">Rejected</div>
+        </div>
+    </div>
+
+    <!-- Chart Section -->
+    <!-- <div class="chart-container">
+        <h2>Status Distribution</h2>
+        <canvas id="statusChart" style="height:200px !important; width:400px !important"></canvas>
+    </div> -->
+
     <div class="controls">
         <input type="text" id="searchInput" class="search-input" placeholder="Search by name, email or nationality...">
+        <a href="export.php" class="btn-export">Export to CSV</a>
     </div>
 
     <div class="table-container">
@@ -340,10 +511,14 @@ $paginated = array_slice($registrations, $offset, $perPage);
                             </button>
 
                             <?php if (strtolower($row['status'] ?? 'pending') !== 'approved'): ?>
-                                <a href="process.php?action=approve&id=<?php echo $row['id']; ?>" 
-                                class="btn-action btn-approve">
-                                    <i data-feather="check"></i> Approve
-                                </a>
+                                <form action="process.php" method="POST" style="display:inline;" 
+                                    onsubmit="showProcessing('approve')">
+                                    <input type="hidden" name="action" value="approve">
+                                    <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
+                                    <button type="submit" class="btn-action btn-approve">
+                                        <i data-feather="check"></i> Approve
+                                    </button>
+                                </form>
                             <?php endif; ?>
 
                             <?php if (strtolower($row['status'] ?? 'pending') !== 'rejected'): ?>
@@ -354,7 +529,8 @@ $paginated = array_slice($registrations, $offset, $perPage);
                                         <i data-feather="x"></i> Reject
                                     </button>
 
-                                    <form method="post" action="process.php" class="reject-form" style="display: none; align-items: center; gap: 8px;">
+                                    <form method="post" action="process.php" class="reject-form" style="display: none; align-items: center; gap: 8px;" 
+                                        onsubmit="showProcessing('reject')">
                                         <input type="hidden" name="action" value="reject">
                                         <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
                                         <input type="text" name="reason" placeholder="Reason for rejection" required 
@@ -476,6 +652,52 @@ $paginated = array_slice($registrations, $offset, $perPage);
             modal.style.display = 'none';
         }
     }
+
+
+    function showProcessing(type) {
+        const overlay = document.getElementById('processing-overlay');
+        const title   = document.getElementById('processing-title');
+        const message = document.getElementById('processing-message');
+
+        if (type === 'approve') {
+            title.textContent = "Approving Membership...";
+            message.innerHTML = "Generating ID, sending email, and updating records.<br>This may take 20–60 seconds depending on email delivery.<br>Please do not close or refresh this page.";
+        } else if (type === 'reject') {
+            title.textContent = "Rejecting Application...";
+            message.innerHTML = "Updating status and notifying the applicant.<br>This may take 20–60 seconds.<br>Please do not close or refresh this page.";
+        }
+
+        overlay.style.display = 'flex';
+    }
+
+    // Optional: Hide loader if page is reloaded (in case of browser back/forward)
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            document.getElementById('processing-overlay').style.display = 'none';
+        }
+    });
+
+    // Chart.js initialization
+    const ctx = document.getElementById('statusChart').getContext('2d');
+    const statusChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: <?php echo json_encode($chartData['labels']); ?>,
+            datasets: [{
+                data: <?php echo json_encode($chartData['data']); ?>,
+                backgroundColor: <?php echo json_encode($chartData['colors']); ?>,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
 </script>
 
 </body>
